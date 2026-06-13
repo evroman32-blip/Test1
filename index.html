@@ -4,7 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Генератор идей для постов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #0f0e17;
+      --surface: rgba(255, 255, 255, 0.06);
+      --surface-hover: rgba(255, 255, 255, 0.1);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #fffffe;
+      --muted: rgba(255, 255, 255, 0.55);
+      --accent-1: #ff6b6b;
+      --accent-2: #ffd93d;
+      --accent-3: #6bcb77;
+      --glow: rgba(255, 107, 107, 0.35);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -12,58 +28,614 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f7;
-      color: #1d1d1f;
+      font-family: "Manrope", sans-serif;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 24px;
+      overflow-x: hidden;
     }
 
-    main {
-      background: #fff;
-      border-radius: 16px;
-      padding: 48px 56px;
-      max-width: 520px;
-      width: 100%;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    /* Animated background */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg__orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+      animation: float 12s ease-in-out infinite;
+    }
+
+    .bg__orb--1 {
+      width: 420px;
+      height: 420px;
+      background: #ff6b6b;
+      top: -120px;
+      left: -80px;
+    }
+
+    .bg__orb--2 {
+      width: 360px;
+      height: 360px;
+      background: #ffd93d;
+      bottom: -100px;
+      right: -60px;
+      animation-delay: -4s;
+    }
+
+    .bg__orb--3 {
+      width: 280px;
+      height: 280px;
+      background: #6bcb77;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation-delay: -8s;
+      opacity: 0.25;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .bg__orb--3 {
+      animation-name: float-center;
+    }
+
+    @keyframes float-center {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(calc(-50% + 40px), calc(-50% - 30px)) scale(1.1); }
+    }
+
+    /* Layout */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      animation: fadeUp 0.8s ease-out;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header__badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      animation: pulse-badge 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+      50% { box-shadow: 0 0 20px 2px rgba(255, 107, 107, 0.15); }
     }
 
     h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
+      font-size: clamp(1.75rem, 5vw, 2.25rem);
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #fff 30%, rgba(255, 255, 255, 0.7));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header__sub {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    /* Action cards */
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       margin-bottom: 32px;
-      line-height: 1.3;
     }
 
-    ul {
-      list-style: none;
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding: 18px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+      overflow: hidden;
     }
 
-    li {
-      padding: 16px 20px;
-      margin-bottom: 12px;
-      background: #f5f5f7;
+    .action-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.04));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .action-btn:hover {
+      background: var(--surface-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-btn:hover::before {
+      opacity: 1;
+    }
+
+    .action-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .action-btn.active {
+      border-color: rgba(255, 107, 107, 0.5);
+      box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.2), 0 8px 32px var(--glow);
+    }
+
+    .action-btn__icon {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      transition: transform 0.3s ease;
+    }
+
+    .action-btn:hover .action-btn__icon {
+      transform: scale(1.1) rotate(-5deg);
+    }
+
+    .action-btn--1 .action-btn__icon { background: rgba(255, 107, 107, 0.2); }
+    .action-btn--2 .action-btn__icon { background: rgba(255, 217, 61, 0.2); }
+    .action-btn--3 .action-btn__icon { background: rgba(107, 203, 119, 0.2); }
+
+    .action-btn__text {
+      flex: 1;
+    }
+
+    .action-btn__arrow {
+      color: var(--muted);
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .action-btn:hover .action-btn__arrow {
+      transform: translateX(4px);
+      color: var(--text);
+    }
+
+    /* Results panel */
+    .results {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      min-height: 120px;
+      backdrop-filter: blur(12px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .results.hidden {
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      position: absolute;
+      visibility: hidden;
+    }
+
+    .results.visible {
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .results__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    .results__title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .results__actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      padding: 8px 14px;
       border-radius: 10px;
-      font-size: 1.05rem;
-      line-height: 1.5;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
 
-    li:last-child {
-      margin-bottom: 0;
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    .icon-btn.copied {
+      color: var(--accent-3);
+      border-color: rgba(107, 203, 119, 0.4);
+    }
+
+    /* Loading */
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      gap: 16px;
+    }
+
+    .loader__dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loader__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-1);
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+
+    .loader__dot:nth-child(2) { animation-delay: 0.15s; background: var(--accent-2); }
+    .loader__dot:nth-child(3) { animation-delay: 0.3s; background: var(--accent-3); }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .loader__text {
+      color: var(--muted);
+      font-size: 0.9rem;
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* Idea list */
+    .idea-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .idea-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      border: 1px solid transparent;
+      opacity: 0;
+      transform: translateX(-12px);
+      animation: itemIn 0.45s ease-out forwards;
+    }
+
+    @keyframes itemIn {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .idea-item:hover {
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .idea-item__num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 107, 107, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent-1);
+    }
+
+    .idea-item__text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Week plan */
+    .week-plan .idea-item__num {
+      background: rgba(107, 203, 119, 0.15);
+      color: var(--accent-3);
+      font-size: 0.7rem;
+    }
+
+    .week-plan .idea-item__day {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-3);
+      margin-bottom: 4px;
+    }
+
+    /* Placeholder */
+    .placeholder {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--muted);
+    }
+
+    .placeholder__emoji {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      animation: wiggle 2s ease-in-out infinite;
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-8deg); }
+      75% { transform: rotate(8deg); }
+    }
+
+    .placeholder p {
+      font-size: 0.95rem;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
-  <main>
-    <h1>Генератор идей для постов</h1>
-    <ul>
-      <li>Пять идей постов для экспертов</li>
-      <li>3 идеи для сториз на сегодня</li>
-      <li>Контент-план на неделю</li>
-    </ul>
-  </main>
+  <div class="bg" aria-hidden="true">
+    <div class="bg__orb bg__orb--1"></div>
+    <div class="bg__orb bg__orb--2"></div>
+    <div class="bg__orb bg__orb--3"></div>
+  </div>
+
+  <div class="app">
+    <header class="header">
+      <div class="header__badge">✦ контент-ассистент</div>
+      <h1>Генератор идей для постов</h1>
+      <p class="header__sub">Выберите формат — получите готовые идеи за секунду</p>
+    </header>
+
+    <div class="actions">
+      <button class="action-btn action-btn--1" data-type="posts">
+        <span class="action-btn__icon">💡</span>
+        <span class="action-btn__text">Пять идей постов для экспертов</span>
+        <span class="action-btn__arrow">→</span>
+      </button>
+      <button class="action-btn action-btn--2" data-type="stories">
+        <span class="action-btn__icon">📱</span>
+        <span class="action-btn__text">3 идеи для сториз на сегодня</span>
+        <span class="action-btn__arrow">→</span>
+      </button>
+      <button class="action-btn action-btn--3" data-type="week">
+        <span class="action-btn__icon">📅</span>
+        <span class="action-btn__text">Контент-план на неделю</span>
+        <span class="action-btn__arrow">→</span>
+      </button>
+    </div>
+
+    <section class="results" id="results">
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder__emoji">🚀</div>
+        <p>Нажмите на кнопку выше,<br>чтобы сгенерировать идеи</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const ideas = {
+      posts: [
+        "Разбор типичной ошибки в вашей нише — и как её избежать за 3 шага",
+        "«5 инструментов, без которых я не работаю» — личный топ с короткими пояснениями",
+        "История клиента: проблема → решение → результат (с цифрами)",
+        "Миф vs реальность: развенчайте популярное заблуждение в вашей экспертной области",
+        "Чек-лист «Как понять, что пора обратиться к специалисту» — полезно и ненавязчиво"
+      ],
+      stories: [
+        "Опрос: «Что вас больше всего беспокоит в [тема]?» — 2–3 варианта ответа",
+        "Закулисье рабочего дня: 15 секунд «как я готовлюсь к консультации»",
+        "Быстрый лайфхак в формате «Знали ли вы, что…» с текстом поверх видео/фото"
+      ],
+      week: [
+        { day: "Понедельник", text: "Мотивационный пост: цель недели + личная история" },
+        { day: "Вторник", text: "Образовательный пост: разбор одной темы в 5 пунктах" },
+        { day: "Среда", text: "Сториз-серия: ответы на частые вопросы подписчиков" },
+        { day: "Четверг", text: "Кейс или отзыв клиента с конкретным результатом" },
+        { day: "Пятница", text: "Лёгкий контент: мем/опрос/«it’s Friday» в теме ниши" },
+        { day: "Суббота", text: "Личное: хобби, семья, рефлексия — humanize бренд" },
+        { day: "Воскресенье", text: "Итоги недели + анонс тем на следующую" }
+      ]
+    };
+
+    const titles = {
+      posts: "5 идей постов для экспертов",
+      stories: "3 идеи для сториз на сегодня",
+      week: "Контент-план на неделю"
+    };
+
+    const resultsEl = document.getElementById("results");
+    const buttons = document.querySelectorAll(".action-btn");
+    let currentType = null;
+    let currentItems = [];
+
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function showLoader() {
+      resultsEl.innerHTML = `
+        <div class="loader">
+          <div class="loader__dots">
+            <div class="loader__dot"></div>
+            <div class="loader__dot"></div>
+            <div class="loader__dot"></div>
+          </div>
+          <p class="loader__text">Генерируем идеи…</p>
+        </div>
+      `;
+      resultsEl.classList.remove("hidden");
+      resultsEl.classList.add("visible");
+    }
+
+    function renderResults(type, items) {
+      currentType = type;
+      currentItems = items;
+
+      let listHTML;
+      if (type === "week") {
+        listHTML = items.map((item, i) => `
+          <li class="idea-item" style="animation-delay: ${i * 0.08}s">
+            <span class="idea-item__num">${i + 1}</span>
+            <div>
+              <div class="idea-item__day">${item.day}</div>
+              <div class="idea-item__text">${item.text}</div>
+            </div>
+          </li>
+        `).join("");
+      } else {
+        listHTML = items.map((text, i) => `
+          <li class="idea-item" style="animation-delay: ${i * 0.1}s">
+            <span class="idea-item__num">${i + 1}</span>
+            <span class="idea-item__text">${text}</span>
+          </li>
+        `).join("");
+      }
+
+      resultsEl.innerHTML = `
+        <div class="results__header">
+          <h2 class="results__title">${titles[type]}</h2>
+          <div class="results__actions">
+            <button class="icon-btn" id="copyBtn">Копировать</button>
+            <button class="icon-btn" id="regenBtn">Ещё раз</button>
+          </div>
+        </div>
+        <ul class="idea-list ${type === "week" ? "week-plan" : ""}">${listHTML}</ul>
+      `;
+
+      document.getElementById("copyBtn").addEventListener("click", copyResults);
+      document.getElementById("regenBtn").addEventListener("click", () => generate(type));
+    }
+
+    function copyResults() {
+      let text;
+      if (currentType === "week") {
+        text = currentItems.map(item => `${item.day}: ${item.text}`).join("\n");
+      } else {
+        text = currentItems.map((item, i) => `${i + 1}. ${item}`).join("\n");
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.textContent = "Скопировано!";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.textContent = "Копировать";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    }
+
+    function generate(type) {
+      buttons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.type === type);
+      });
+
+      showLoader();
+
+      setTimeout(() => {
+        let items;
+        if (type === "week") {
+          items = shuffle(ideas.week);
+        } else {
+          items = shuffle(ideas[type]);
+        }
+        renderResults(type, items);
+      }, 900 + Math.random() * 400);
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => generate(btn.dataset.type));
+    });
+  </script>
 </body>
 </html>
