@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -455,6 +455,65 @@
       font-size: 0.95rem;
       line-height: 1.5;
     }
+
+    /* Niche input */
+    .niche {
+      margin-bottom: 24px;
+    }
+
+    .niche__label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .niche__input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .niche__input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .niche__input:focus {
+      border-color: rgba(255, 107, 107, 0.5);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+    }
+
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Error */
+    .error-box {
+      text-align: center;
+      padding: 24px 16px;
+    }
+
+    .error-box__icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .error-box__text {
+      color: #ff8a8a;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -468,8 +527,18 @@
     <header class="header">
       <div class="header__badge">✦ контент-ассистент</div>
       <h1>Генератор идей для постов</h1>
-      <p class="header__sub">Выберите формат — получите готовые идеи за секунду</p>
+      <p class="header__sub">Выберите формат — AI сгенерирует идеи за несколько секунд</p>
     </header>
+
+    <div class="niche">
+      <label class="niche__label" for="niche">Ваша ниша (необязательно)</label>
+      <input
+        class="niche__input"
+        type="text"
+        id="niche"
+        placeholder="Например: психология, фитнес, маркетинг..."
+      >
+    </div>
 
     <div class="actions">
       <button class="action-btn action-btn--1" data-type="posts">
@@ -498,30 +567,6 @@
   </div>
 
   <script>
-    const ideas = {
-      posts: [
-        "Разбор типичной ошибки в вашей нише — и как её избежать за 3 шага",
-        "«5 инструментов, без которых я не работаю» — личный топ с короткими пояснениями",
-        "История клиента: проблема → решение → результат (с цифрами)",
-        "Миф vs реальность: развенчайте популярное заблуждение в вашей экспертной области",
-        "Чек-лист «Как понять, что пора обратиться к специалисту» — полезно и ненавязчиво"
-      ],
-      stories: [
-        "Опрос: «Что вас больше всего беспокоит в [тема]?» — 2–3 варианта ответа",
-        "Закулисье рабочего дня: 15 секунд «как я готовлюсь к консультации»",
-        "Быстрый лайфхак в формате «Знали ли вы, что…» с текстом поверх видео/фото"
-      ],
-      week: [
-        { day: "Понедельник", text: "Мотивационный пост: цель недели + личная история" },
-        { day: "Вторник", text: "Образовательный пост: разбор одной темы в 5 пунктах" },
-        { day: "Среда", text: "Сториз-серия: ответы на частые вопросы подписчиков" },
-        { day: "Четверг", text: "Кейс или отзыв клиента с конкретным результатом" },
-        { day: "Пятница", text: "Лёгкий контент: мем/опрос/«it’s Friday» в теме ниши" },
-        { day: "Суббота", text: "Личное: хобби, семья, рефлексия — humanize бренд" },
-        { day: "Воскресенье", text: "Итоги недели + анонс тем на следующую" }
-      ]
-    };
-
     const titles = {
       posts: "5 идей постов для экспертов",
       stories: "3 идеи для сториз на сегодня",
@@ -529,17 +574,15 @@
     };
 
     const resultsEl = document.getElementById("results");
+    const nicheInput = document.getElementById("niche");
     const buttons = document.querySelectorAll(".action-btn");
     let currentType = null;
     let currentItems = [];
+    let isGenerating = false;
 
-    function shuffle(arr) {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
+    function setButtonsDisabled(disabled) {
+      isGenerating = disabled;
+      buttons.forEach(btn => { btn.disabled = disabled; });
     }
 
     function showLoader() {
@@ -550,11 +593,32 @@
             <div class="loader__dot"></div>
             <div class="loader__dot"></div>
           </div>
-          <p class="loader__text">Генерируем идеи…</p>
+          <p class="loader__text">AI генерирует идеи…</p>
         </div>
       `;
       resultsEl.classList.remove("hidden");
       resultsEl.classList.add("visible");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showError(message) {
+      resultsEl.innerHTML = `
+        <div class="error-box">
+          <div class="error-box__icon">⚠️</div>
+          <p class="error-box__text">${escapeHtml(message)}</p>
+          <button class="icon-btn" id="retryBtn">Попробовать снова</button>
+        </div>
+      `;
+      document.getElementById("retryBtn").addEventListener("click", () => {
+        if (currentType) generate(currentType);
+      });
     }
 
     function renderResults(type, items) {
@@ -567,8 +631,8 @@
           <li class="idea-item" style="animation-delay: ${i * 0.08}s">
             <span class="idea-item__num">${i + 1}</span>
             <div>
-              <div class="idea-item__day">${item.day}</div>
-              <div class="idea-item__text">${item.text}</div>
+              <div class="idea-item__day">${escapeHtml(item.day)}</div>
+              <div class="idea-item__text">${escapeHtml(item.text)}</div>
             </div>
           </li>
         `).join("");
@@ -576,7 +640,7 @@
         listHTML = items.map((text, i) => `
           <li class="idea-item" style="animation-delay: ${i * 0.1}s">
             <span class="idea-item__num">${i + 1}</span>
-            <span class="idea-item__text">${text}</span>
+            <span class="idea-item__text">${escapeHtml(text)}</span>
           </li>
         `).join("");
       }
@@ -615,22 +679,42 @@
       });
     }
 
-    function generate(type) {
+    async function generate(type) {
+      if (isGenerating) return;
+
+      currentType = type;
       buttons.forEach(btn => {
         btn.classList.toggle("active", btn.dataset.type === type);
       });
 
       showLoader();
+      setButtonsDisabled(true);
 
-      setTimeout(() => {
-        let items;
-        if (type === "week") {
-          items = shuffle(ideas.week);
-        } else {
-          items = shuffle(ideas[type]);
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            niche: nicheInput.value,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Не удалось получить идеи");
         }
-        renderResults(type, items);
-      }, 900 + Math.random() * 400);
+
+        renderResults(type, data.items);
+      } catch (err) {
+        const msg = err.message.includes("Failed to fetch")
+          ? "Сервер не запущен. Установите Node.js, затем выполните: npm install && npm start"
+          : err.message;
+        showError(msg);
+      } finally {
+        setButtonsDisabled(false);
+      }
     }
 
     buttons.forEach(btn => {
